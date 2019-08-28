@@ -1,0 +1,115 @@
+from mutagen.id3 import ID3, TIT2   # for extracting meta data
+import pygame   # for music playing
+import os   # regarding directory where the music is at
+from tkinter import *  # for gui
+from tkinter.filedialog import askdirectory
+
+root = Tk()           # create a window for the mp3 player
+root.minsize(300, 350)  # size of the window
+
+listOfSongs = []  # Store the songs
+real_names = []
+
+index = 0        # pick the songs from the list
+
+v = StringVar()
+songLabel = Label(root, textvariable=v, width=35)  # label for the current song that is playing, width 35 means 35 letters can be shown
+
+
+def nextSong(event):
+    global index
+    index += 1
+    pygame.mixer.music.load(listOfSongs[index])
+    pygame.mixer.music.play()
+    updateLabel()
+
+
+def prevSong(event):
+    global index
+    index -= 1
+    pygame.mixer.music.load(listOfSongs[index])
+    pygame.mixer.music.play()
+    updateLabel()
+
+
+def stopSong(event):
+    pygame.mixer.music.stop()
+    updateLabel()
+
+
+def resumeSong(event):
+    pygame.mixer.music.play()
+    v.set(real_names[index])
+
+
+# function that keeps track of the current song playing
+def updateLabel():
+    global index
+    v.set(real_names[index])
+
+
+def directory_chooser():
+    directory = askdirectory()  # choose a directory where the music is located
+    os.chdir(directory)  # change the current direct to the main which contains the music
+
+    for files in os.listdir(directory):
+        if files.endswith(".mp3"):  # add files only wit mp3 extension
+
+            real_dir = os.path.realpath(files)  # get the whole directory path of the songs
+            try:
+                audio = ID3(real_dir)  # brings all the meta data in the directory in audio
+                real_names.append(audio["TIT2"].text[0])
+            except:
+                real_names.append(files)
+
+            listOfSongs.append(files)
+
+
+    pygame.mixer.init()  # initialize the mixer module
+    pygame.mixer.music.load(listOfSongs[0])  # play the first song of the list
+    #pygame.mixer.music.play()  # play the playlist
+
+
+directory_chooser()
+
+
+label = Label(root, text='Music Player')  # displays a label for the box
+label.pack()
+
+listbox = Listbox(root)  # it will display a box where all the songs are going to be listed
+listbox.pack()
+
+#listOfSongs.reverse()
+real_names.reverse()
+
+for items in real_names:  # insert all the songs in the listbox to be displayed
+    listbox.insert(0, items)
+
+#listOfSongs.reverse()
+real_names.reverse()
+
+next_button = Button(root, text='Next Track')  # create a button to play the next song
+next_button.pack()
+next_button.bind("<Button-1>", nextSong)
+
+
+previous_button = Button(root, text='Previous Track')  # create a button to play the previous song
+previous_button.pack()
+previous_button.bind("<Button-1>", prevSong)  # button 1 means only when you left click it it will work
+
+
+stop_button = Button(root, text='Stop the Track')
+stop_button.pack()
+stop_button.bind("<Button-1>", stopSong)
+
+
+resume_button = Button(root, text='Resume Track')
+resume_button.pack()
+resume_button.bind("<Button-1>", resumeSong)
+
+songLabel.pack()
+
+
+root.mainloop()
+
+
